@@ -1,7 +1,7 @@
 // =====================================================
 // IMPORT
 // =====================================================
-import React, { useState, useMemo, useEffect } from "react"
+import React, { useState, useMemo, useEffect, useRef } from "react"
 import Papa from "papaparse"
 import * as XLSX from "xlsx"
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch"
@@ -166,8 +166,11 @@ function App() {
   const [uploadedData, setUploadedData] = useState([])
   const [selectedRow, setSelectedRow] = useState("ALL")
   const [searchBin, setSearchBin] = useState("")
+  const [searchInput, setSearchInput] = useState("") // Tambahan state buat nampung ketikan
   const [tooltip, setTooltip] = useState(null)
   const [dbStatus, setDbStatus] = useState("LOADING") 
+
+  const transformRef = useRef(null) // Tambahan ref buat auto-zoom
 
   const boxWidth = 20    
   const boxHeight = 20   
@@ -228,6 +231,19 @@ function App() {
           });
       });
   }, []);
+
+  // AUTO FOCUS & ZOOM KETIKA SEARCHING DI ENTER
+  useEffect(() => {
+    if (!searchBin) return
+    
+    // Kasih jeda 150ms biar React selesai ngerender map & ganti layout
+    setTimeout(() => {
+      const el = document.getElementById("search-highlight")
+      if (el && transformRef.current) {
+        transformRef.current.zoomToElement("search-highlight", 2.5, 600)
+      }
+    }, 150)
+  }, [searchBin, selectedRow])
 
   const allocatedColorMap = useMemo(() => {
     const uniqueAllocated = [...new Set(uploadedData.map(x => x.AllocatedFor || "EMPTY"))]
@@ -329,16 +345,6 @@ function App() {
 
     return result
   }, [groupedRacks, sections, pairs, selectedRow])   
-
-  useEffect(() => {
-    if (!searchBin) return
-    const el = document.getElementById("search-highlight")
-    if (el) {
-      // Kita mematikan smooth scroll bawaan browser ke highlight kalau mode map interaktif
-      // biar gak bentrok sama zoom logic-nya
-      // el.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" })
-    }
-  }, [searchBin])
 
   const sectionBreaks = useMemo(() => sections.slice(0, -1).map(x => x.end), [sections])
   const breakIndexes = useMemo(() => {
@@ -540,16 +546,22 @@ function App() {
             <div style={{ display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap" }}>
               <input
                 type="text"
-                placeholder="Search Bin / Column..."
-                value={searchBin}
+                placeholder="Search Bin/Column (Press Enter)..."
+                value={searchInput}
                 onChange={(e) => {
-                  const value = e.target.value.toUpperCase()
-                  setSearchBin(value)
-                  if (!value) return
-                  
-                  const foundRow = uploadedData.find(x => x.UpperBin.includes(value))?.ROW
-                  if (foundRow && foundRow !== selectedRow) {
-                    setSelectedRow(foundRow)
+                  // Cuma update state teks, nggak trigger nyari
+                  setSearchInput(e.target.value.toUpperCase())
+                }}
+                onKeyDown={(e) => {
+                  // EKSEKUSI PENCARIAN & PINDAH RACK SAAT ENTER
+                  if (e.key === 'Enter') {
+                    setSearchBin(searchInput)
+                    if (!searchInput) return
+                    
+                    const foundRow = uploadedData.find(x => x.UpperBin.includes(searchInput))?.ROW
+                    if (foundRow && foundRow !== selectedRow) {
+                      setSelectedRow(foundRow)
+                    }
                   }
                 }}
                 style={{ padding: "6px 12px", borderRadius: "6px", border: "1px solid #d1d5db", minWidth: "200px", fontSize: "13px" }}
@@ -636,6 +648,7 @@ function App() {
           
           {selectedRow !== "ALL" && (
             <TransformWrapper
+              ref={transformRef} // <-- REF DI PASANG DI SINI
               initialScale={1}
               minScale={0.15} // Memungkinkan map mengecil (zoom out) sampai pas di layar HP
               maxScale={4}    // Batas zoom in
