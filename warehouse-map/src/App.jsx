@@ -420,8 +420,9 @@ function App() {
                     setViewMode("map");
                   }}
                   style={{
-                    width: "280px", // Lebar fix biar grid flex-nya rapi
-                    flex: "0 0 auto",
+                    width: "100%", // Lebar fix biar grid flex-nya rapi
+                    maxWidth: "280px", // Tetap max 280px di desktop, tapi fleksibel di HP
+                    flex: "1 1 auto",
                     background: "#ffffff",
                     border: "2px solid #e7dfd3",
                     borderRadius: "14px",
@@ -629,7 +630,7 @@ function App() {
         </div>
 
         {/* AREA MAIN CONTENT (SCROLLABLE GRID MAP) */}
-        <div style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "center", width: "100%", boxSizing: "border-box" }}>
+        <div style={{ padding: "24px 10px", display: "flex", flexDirection: "column", alignItems: "center", width: "100%", boxSizing: "border-box", touchAction: "pan-x" }}>
           
           {selectedRow !== "ALL" && (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", overflowX: "auto" }}>
