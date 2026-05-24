@@ -4,6 +4,7 @@
 import React, { useState, useMemo, useEffect } from "react"
 import Papa from "papaparse"
 import * as XLSX from "xlsx"
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch"
 
 // =====================================================
 // ROW CONFIG
@@ -53,7 +54,7 @@ const columnAliases = {
 
 const noiseBase64 = "url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAIklEQVQIW2NkQAKrVq36zwjjgzhhYWGMYAEYB8RmROaABADeOQ8CXl/xfgAAAABJRU5ErkJggg==')"
 
-// TAMBAHAN ANIMASI CSS (FadeInUp biar landing page gak kaku)
+// TAMBAHAN ANIMASI CSS
 const globalStyles = `
 @keyframes pulseGlow {
   0% { transform: scale(1); box-shadow: 0 0 12px rgba(0, 255, 255, 0.8), 0 0 20px rgba(0, 255, 255, 0.4); outline: 2px solid #ffffff; }
@@ -117,7 +118,6 @@ function normalizeRow(row, headers) {
 // =====================================================
 function RenderFloatingLabels({ zones, boxWidth, sectionGap, breakIndexes, isVisible }) {
   if (!isVisible || !zones || zones.length === 0) return null;
-
   return zones.map((zone, i) => {
     const centerIndex = (zone.start + zone.end + 1) / 2
     const passedSectionBreaks = breakIndexes.filter(idx => idx !== -1 && idx <= centerIndex).length
@@ -279,7 +279,6 @@ function App() {
     filteredData.forEach((item) => {
       if (!grouped[item.Rack]) grouped[item.Rack] = { items: [], byColumn: {} }
       grouped[item.Rack].items.push(item)
-      
       if (!grouped[item.Rack].byColumn[item.Column]) {
         grouped[item.Rack].byColumn[item.Column] = []
       }
@@ -335,7 +334,9 @@ function App() {
     if (!searchBin) return
     const el = document.getElementById("search-highlight")
     if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" })
+      // Kita mematikan smooth scroll bawaan browser ke highlight kalau mode map interaktif
+      // biar gak bentrok sama zoom logic-nya
+      // el.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" })
     }
   }, [searchBin])
 
@@ -355,8 +356,7 @@ function App() {
     return (
       <div style={{ 
         fontFamily: "'Segoe UI', Roboto, Helvetica, Arial, sans-serif", 
-        backgroundColor: "#f4f1ea", // Warna dasar krem alabaster
-        // Efek blueprint/dot-grid biar gak kaku
+        backgroundColor: "#f4f1ea", 
         backgroundImage: "radial-gradient(#d4cebc 1.5px, transparent 1.5px)", 
         backgroundSize: "32px 32px",
         minHeight: "100vh", 
@@ -373,7 +373,7 @@ function App() {
           maxWidth: "1000px", 
           width: "100%", 
           textAlign: "center",
-          animation: "fadeInUp 0.8s ease-out forwards" // Efek muncul mulus
+          animation: "fadeInUp 0.8s ease-out forwards" 
         }}>
           
           {/* Badge Database Status */}
@@ -393,19 +393,19 @@ function App() {
             Layout Mezzanine MAP <br/>
             <span style={{ color: "#b45309", position: "relative", display: "inline-block" }}>
               Warehouse Cella
-              {/* Garis bawah artistik */}
               <div style={{ position: "absolute", bottom: "-6px", left: 0, right: 0, height: "4px", backgroundColor: "#b45309", borderRadius: "2px" }}></div>
             </span>
           </h1>
+        
           <p style={{ fontSize: "17px", color: "#6b6150", margin: "0 0 54px 0", fontWeight: "500" }}>
             Industrial Core Mapping & Real-time Allocation Management Console
           </p>
 
-          {/* GRID MENU MEZZANINE (FLEXBOX CENTER UNTUK SIMETRIS 3 ATAS, 2 BAWAH) */}
+          {/* GRID MENU MEZZANINE */}
           <div style={{ 
             display: "flex", 
             flexWrap: "wrap", 
-            justifyContent: "center", // INI KUNCINYA BRO! Otomatis senter.
+            justifyContent: "center", 
             gap: "24px", 
             marginTop: "20px" 
           }}>
@@ -420,8 +420,8 @@ function App() {
                     setViewMode("map");
                   }}
                   style={{
-                    width: "100%", // Lebar fix biar grid flex-nya rapi
-                    maxWidth: "280px", // Tetap max 280px di desktop, tapi fleksibel di HP
+                    width: "100%", 
+                    maxWidth: "280px", 
                     flex: "1 1 auto",
                     background: "#ffffff",
                     border: "2px solid #e7dfd3",
@@ -431,9 +431,9 @@ function App() {
                     cursor: isDisabled ? "not-allowed" : "pointer",
                     transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                     boxShadow: "0 4px 12px rgba(180, 83, 9, 0.03)",
-                    opacity: 0, // Diumpetin dulu buat animasi
-                    animation: `fadeInUp 0.6s ease-out forwards`, // Efek jatoh/masuk
-                    animationDelay: `${index * 0.1}s`, // Munculnya berurutan
+                    opacity: 0, 
+                    animation: `fadeInUp 0.6s ease-out forwards`, 
+                    animationDelay: `${index * 0.1}s`, 
                     outline: "none",
                     position: "relative",
                     overflow: "hidden"
@@ -459,6 +459,7 @@ function App() {
                       ACTIVE ZONE
                     </span>
                   </div>
+          
                   <div style={{ borderTop: "2px solid #f1eae0", margin: "20px 0", paddingTop: "16px" }}>
                     <div style={{ fontSize: "12px", color: "#9ca3af", marginBottom: "6px", fontWeight: "600", textTransform: "uppercase" }}>
                       Aisle Configurations
@@ -467,6 +468,7 @@ function App() {
                       {rowConfigs[mezz]?.map(s => `Sec ${s.section} (${s.start}-${s.end})`).join(" • ")}
                     </div>
                   </div>
+          
                   <div style={{ fontSize: "13px", fontWeight: "800", color: "#b45309", display: "flex", alignItems: "center", gap: "6px", marginTop: "12px" }}>
                     Open Map View <span style={{ fontSize: "16px" }}>&rarr;</span>
                   </div>
@@ -629,188 +631,214 @@ function App() {
 
         </div>
 
-        {/* AREA MAIN CONTENT (SCROLLABLE GRID MAP) */}
-        <div style={{ padding: "24px 10px", display: "flex", flexDirection: "column", alignItems: "center", width: "100%", boxSizing: "border-box", touchAction: "pan-x" }}>
+        {/* AREA MAIN CONTENT (INTERACTIVE MAP BISA DI-ZOOM) */}
+        <div style={{ flex: 1, width: "100%", position: "relative", overflow: "hidden", background: "#f8f8f8" }}>
           
           {selectedRow !== "ALL" && (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", overflowX: "auto" }}>
-              
-              {rackList.map((rackNo) => {
-                const rackGroup = groupedRacks[rackNo]
-                const rackData = rackGroup?.items || []
-                const byColumn = rackGroup?.byColumn || {}
-                
-                const rackTypesBySection = {}
-                sections.forEach(sec => {
-                  const found = rackData.find((x) => x.Column >= sec.start && x.Column <= sec.end)
-                  if (found) rackTypesBySection[sec.section] = found.SD || "SINGLE"
-                })
+            <TransformWrapper
+              initialScale={1}
+              minScale={0.15} // Memungkinkan map mengecil (zoom out) sampai pas di layar HP
+              maxScale={4}    // Batas zoom in
+              centerOnInit={true} // Otomatis ke tengah pas pertama kali buka
+              centerZoomedOut={true}
+              wheel={{ step: 0.1 }}
+              pinch={{ step: 5 }} // Kecepatan zoom pake jari di HP
+            >
+              {({ zoomIn, zoomOut, resetTransform }) => (
+                <>
+                  {/* TOMBOL ZOOM MELAYANG (Opsional, ngebantu user di HP) */}
+                  <div style={{ position: "absolute", bottom: "24px", right: "24px", zIndex: 1000, display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <button onClick={() => zoomIn()} style={{ width: "44px", height: "44px", background: "#fff", borderRadius: "50%", border: "1px solid #e5e7eb", boxShadow: "0 4px 6px rgba(0,0,0,0.1)", fontSize: "24px", fontWeight: "bold", color: "#374151", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+                    <button onClick={() => zoomOut()} style={{ width: "44px", height: "44px", background: "#fff", borderRadius: "50%", border: "1px solid #e5e7eb", boxShadow: "0 4px 6px rgba(0,0,0,0.1)", fontSize: "24px", fontWeight: "bold", color: "#374151", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>-</button>
+                    <button onClick={() => resetTransform()} style={{ width: "44px", height: "44px", background: "#fff", borderRadius: "50%", border: "1px solid #e5e7eb", boxShadow: "0 4px 6px rgba(0,0,0,0.1)", fontSize: "16px", fontWeight: "bold", color: "#374151", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>↺</button>
+                  </div>
 
-                const aisle = rackNo + 1
-                const aisleWidth = (pairs.length * boxWidth) + ((sections.length - 1) * sectionGap)
-                const zoneGroups = zoneGroupsPerRack[rackNo] || []
-
-                return (
-                  <div key={rackNo} style={{ display: "flex", flexDirection: "column", width: `${aisleWidth}px`, marginBottom: "0px", boxSizing: "border-box" }}>
+                  {/* KANVAS MAP NYA */}
+                  <TransformComponent wrapperStyle={{ width: "100%", height: "calc(100vh - 180px)" }}>
                     
-                    {/* Aisle Bar */}
-                    <div style={{ width: "100%", height: `${boxHeight}px`, background: "#e5e7eb", display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: "10px", fontWeight: "bold", fontSize: "12px", boxSizing: "border-box" }}>
-                      Aisle {aisle}
-                    </div>
-
-                    {/* Rack Grid Wrapper */}
-                    <div style={{ display: "flex", position: "relative", width: "100%" }}>
+                    {/* CONTAINER GRID ASLI */}
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "40px", minWidth: "max-content" }}>
                       
-                      <RenderFloatingLabels 
-                        zones={zoneGroups} 
-                        boxWidth={boxWidth} 
-                        sectionGap={sectionGap} 
-                        breakIndexes={breakIndexes} 
-                        isVisible={false} 
-                      />
+                      {rackList.map((rackNo) => {
+                        const rackGroup = groupedRacks[rackNo]
+                        const rackData = rackGroup?.items || []
+                        const byColumn = rackGroup?.byColumn || {}
+                        
+                        const rackTypesBySection = {}
+                        sections.forEach(sec => {
+                          const found = rackData.find((x) => x.Column >= sec.start && x.Column <= sec.end)
+                          if (found) rackTypesBySection[sec.section] = found.SD || "SINGLE"
+                        })
 
-                      {/* BOX GRID GENERATOR */}
-                      {pairs.map((pair) => {
-                        const section = pair.section
-                        const sectionType = rackTypesBySection[section] || "SINGLE"
-
-                        const topItems = byColumn[pair.genap] || []
-                        const bottomItems = byColumn[pair.ganjil] || []
-
-                        const topData = topItems[0]
-                        const bottomData = bottomItems[0]
-                        const topExist = !!topData
-                        const bottomExist = !!bottomData
-
-                        const isTopPigeon = topItems.some(x => x.IsPigeon)
-                        const isBottomPigeon = bottomItems.some(x => x.IsPigeon)
-
-                        const isTopSearch = searchBin && (
-                          `${section}${pair.genap}`.includes(searchBin) ||
-                          topItems.some(x => x.UpperBin.includes(searchBin))
-                        )
-
-                        const isBottomSearch = searchBin && (
-                          `${section}${pair.ganjil}`.includes(searchBin) ||
-                          bottomItems.some(x => x.UpperBin.includes(searchBin))
-                        )
-
-                        if (sectionType === "DOUBLE") {
-                          const topColor = isTopPigeon ? "#111827" : (allocatedColorMap[topData?.AllocatedFor] || allocatedColorMap.DEFAULT)
-                          const bottomColor = isBottomPigeon ? "#111827" : (allocatedColorMap[bottomData?.AllocatedFor] || allocatedColorMap.DEFAULT)
-
-                          return (
-                            <React.Fragment key={pair.genap}>
-                              {sectionBreaks.includes(pair.genap) && <div style={{ width: `${sectionGap}px` }} />}
-                              <div style={{ display: "flex", flexDirection: "column" }}>
-                                <div
-                                  id={isTopSearch ? "search-highlight" : undefined}
-                                  onMouseEnter={(e) => {
-                                    setTooltip({ x: e.clientX, y: e.clientY, data: { bin: topData?.StorageBin, allocated: topData?.AllocatedFor, rack: rackNo, column: pair.genap, pigeon: isTopPigeon ? "YES" : "NO" } })
-                                  }}
-                                  onMouseLeave={() => setTooltip(null)}
-                                  style={{
-                                    width: `${boxWidth}px`, height: `${boxHeight}px`, border: "0.5px solid #84cc16",
-                                    background: topColor,
-                                    boxShadow: isTopSearch ? "0 0 40px rgba(0,255,255,1)" : "none",
-                                    zIndex: isTopSearch ? 9999 : 1,
-                                    animation: isTopSearch ? "pulseGlow 0.6s infinite ease-in-out" : "none",
-                                    color: isTopPigeon ? "#ffffff" : "#111827",
-                                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: "8px", fontWeight: "bold", boxSizing: "border-box"
-                                  }}>
-                                  {topExist ? pair.genap : ""}
-                                </div>
-                                <div
-                                  id={isBottomSearch ? "search-highlight" : undefined}
-                                  onMouseEnter={(e) => {
-                                    setTooltip({ x: e.clientX, y: e.clientY, data: { bin: bottomData?.StorageBin, allocated: bottomData?.AllocatedFor, rack: rackNo, column: pair.ganjil, pigeon: isBottomPigeon ? "YES" : "NO" } })
-                                  }}
-                                  onMouseLeave={() => setTooltip(null)}
-                                  style={{
-                                    width: `${boxWidth}px`, height: `${boxHeight}px`,
-                                    borderLeft: "0.5px solid #84cc16", borderRight: "0.5px solid #84cc16", borderTop: "0.5px solid #84cc16", borderBottom: "0.5px solid #84cc16",
-                                    background: bottomColor,
-                                    boxShadow: isBottomSearch ? "0 0 22px rgba(0,255,255,1)" : "none",
-                                    zIndex: isBottomSearch ? 50 : 1,
-                                    animation: isBottomSearch ? "pulseGlow 1s infinite" : "none",
-                                    color: isBottomPigeon ? "#ffffff" : "#111827",
-                                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: "8px", fontWeight: "bold", boxSizing: "border-box"
-                                  }}>
-                                  {bottomExist ? pair.ganjil : ""}
-                                </div>
-                              </div>
-                            </React.Fragment>
-                          )
-                        }
-
-                        if (!topExist && !bottomExist) {
-                          return (
-                            <React.Fragment key={pair.genap}>
-                              {sectionBreaks.includes(pair.genap) && <div style={{ width: `${sectionGap}px` }} />}
-                              <div style={{ width: `${boxWidth}px`, height: `${boxHeight}px` }} />
-                            </React.Fragment>
-                          )
-                        }
-
-                        const topSingleColor = isTopPigeon ? "#111827" : (allocatedColorMap[topData?.AllocatedFor] || allocatedColorMap.DEFAULT)
-                        const bottomSingleColor = isBottomPigeon ? "#111827" : (allocatedColorMap[bottomData?.AllocatedFor] || allocatedColorMap.DEFAULT)
+                        const aisle = rackNo + 1
+                        const aisleWidth = (pairs.length * boxWidth) + ((sections.length - 1) * sectionGap)
+                        const zoneGroups = zoneGroupsPerRack[rackNo] || []
 
                         return (
-                          <React.Fragment key={pair.genap}>
-                            {sectionBreaks.includes(pair.genap) && <div style={{ width: `${sectionGap}px` }} />}
-                            <div style={{ display: "flex", flexDirection: "column", width: `${boxWidth}px`, height: `${boxHeight}px`, boxSizing: "border-box", position: "relative" }}>
-                              {topExist && (
-                                <div
-                                  id={isTopSearch ? "search-highlight" : undefined}
-                                  onMouseEnter={(e) => {
-                                    setTooltip({ x: e.clientX, y: e.clientY, data: { bin: topData?.StorageBin, allocated: topData?.AllocatedFor, rack: rackNo, column: pair.genap, pigeon: isTopPigeon ? "YES" : "NO" } })
-                                  }}
-                                  onMouseLeave={() => setTooltip(null)}
-                                  style={{
-                                    width: "100%", height: bottomExist ? "50%" : "100%",
-                                    background: topSingleColor,
-                                    borderLeft: "0.5px solid #84cc16", borderRight: "0.5px solid #84cc16", borderTop: "0.5px solid #84cc16",
-                                    borderBottom: bottomExist ? "0.5px solid #84cc16" : "0.5px solid #84cc16",
-                                    boxShadow: isTopSearch ? "0 0 40px rgba(0,255,255,1)" : "none",
-                                    zIndex: isTopSearch ? 9999 : 1,
-                                    animation: isTopSearch ? "pulseGlow 0.6s infinite ease-in-out" : "none",
-                                    color: isTopPigeon ? "#ffffff" : "#111827",
-                                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: bottomExist ? "7px" : "8px", fontWeight: "bold", boxSizing: "border-box"
-                                  }}>
-                                  {pair.genap}
-                                </div>
-                              )}
-                              {bottomExist && (
-                                <div
-                                  id={isBottomSearch ? "search-highlight" : undefined}
-                                  onMouseEnter={(e) => {
-                                    setTooltip({ x: e.clientX, y: e.clientY, data: { bin: bottomData?.StorageBin, allocated: bottomData?.AllocatedFor, rack: rackNo, column: pair.ganjil, pigeon: isBottomPigeon ? "YES" : "NO" } })
-                                  }}
-                                  onMouseLeave={() => setTooltip(null)}
-                                  style={{
-                                    width: "100%", height: topExist ? "50%" : "100%",
-                                    background: bottomSingleColor,
-                                    borderLeft: "0.5px solid #84cc16", borderRight: "0.5px solid #84cc16", borderBottom: "0.5px solid #84cc16",
-                                    borderTop: topExist ? "none" : "0.5px solid #84cc16",
-                                    boxShadow: isBottomSearch ? "0 0 22px rgba(0,255,255,1)" : "none",
-                                    transform: isBottomSearch ? "scale(1.25)" : "scale(1)",
-                                    zIndex: isBottomSearch ? 50 : 1,
-                                    animation: isBottomSearch ? "pulseGlow 1s infinite" : "none",
-                                    color: isBottomPigeon ? "#ffffff" : "#111827",
-                                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: topExist ? "7px" : "8px", fontWeight: "bold", boxSizing: "border-box"
-                                  }}>
-                                  {pair.ganjil}
-                                </div>
-                              )}
+                          <div key={rackNo} style={{ display: "flex", flexDirection: "column", width: `${aisleWidth}px`, marginBottom: "0px", boxSizing: "border-box" }}>
+                            
+                            {/* Aisle Bar */}
+                            <div style={{ width: "100%", height: `${boxHeight}px`, background: "#e5e7eb", display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: "10px", fontWeight: "bold", fontSize: "12px", boxSizing: "border-box" }}>
+                              Aisle {aisle}
                             </div>
-                          </React.Fragment>
+
+                            {/* Rack Grid Wrapper */}
+                            <div style={{ display: "flex", position: "relative", width: "100%" }}>
+                              
+                              <RenderFloatingLabels 
+                                zones={zoneGroups} 
+                                boxWidth={boxWidth} 
+                                sectionGap={sectionGap} 
+                                breakIndexes={breakIndexes} 
+                                isVisible={false} 
+                              />
+
+                              {/* BOX GRID GENERATOR */}
+                              {pairs.map((pair) => {
+                                const section = pair.section
+                                const sectionType = rackTypesBySection[section] || "SINGLE"
+
+                                const topItems = byColumn[pair.genap] || []
+                                const bottomItems = byColumn[pair.ganjil] || []
+
+                                const topData = topItems[0]
+                                const bottomData = bottomItems[0]
+                                const topExist = !!topData
+                                const bottomExist = !!bottomData
+
+                                const isTopPigeon = topItems.some(x => x.IsPigeon)
+                                const isBottomPigeon = bottomItems.some(x => x.IsPigeon)
+
+                                const isTopSearch = searchBin && (
+                                  `${section}${pair.genap}`.includes(searchBin) ||
+                                  topItems.some(x => x.UpperBin.includes(searchBin))
+                                )
+
+                                const isBottomSearch = searchBin && (
+                                  `${section}${pair.ganjil}`.includes(searchBin) ||
+                                  bottomItems.some(x => x.UpperBin.includes(searchBin))
+                                )
+
+                                if (sectionType === "DOUBLE") {
+                                  const topColor = isTopPigeon ? "#111827" : (allocatedColorMap[topData?.AllocatedFor] || allocatedColorMap.DEFAULT)
+                                  const bottomColor = isBottomPigeon ? "#111827" : (allocatedColorMap[bottomData?.AllocatedFor] || allocatedColorMap.DEFAULT)
+
+                                  return (
+                                    <React.Fragment key={pair.genap}>
+                                      {sectionBreaks.includes(pair.genap) && <div style={{ width: `${sectionGap}px` }} />}
+                                      <div style={{ display: "flex", flexDirection: "column" }}>
+                                        <div
+                                          id={isTopSearch ? "search-highlight" : undefined}
+                                          onMouseEnter={(e) => {
+                                            setTooltip({ x: e.clientX, y: e.clientY, data: { bin: topData?.StorageBin, allocated: topData?.AllocatedFor, rack: rackNo, column: pair.genap, pigeon: isTopPigeon ? "YES" : "NO" } })
+                                          }}
+                                          onMouseLeave={() => setTooltip(null)}
+                                          style={{
+                                            width: `${boxWidth}px`, height: `${boxHeight}px`, border: "0.5px solid #84cc16",
+                                            background: topColor,
+                                            boxShadow: isTopSearch ? "0 0 40px rgba(0,255,255,1)" : "none",
+                                            zIndex: isTopSearch ? 9999 : 1,
+                                            animation: isTopSearch ? "pulseGlow 0.6s infinite ease-in-out" : "none",
+                                            color: isTopPigeon ? "#ffffff" : "#111827",
+                                            display: "flex", alignItems: "center", justifyContent: "center", fontSize: "8px", fontWeight: "bold", boxSizing: "border-box"
+                                          }}>
+                                          {topExist ? pair.genap : ""}
+                                        </div>
+                                        <div
+                                          id={isBottomSearch ? "search-highlight" : undefined}
+                                          onMouseEnter={(e) => {
+                                            setTooltip({ x: e.clientX, y: e.clientY, data: { bin: bottomData?.StorageBin, allocated: bottomData?.AllocatedFor, rack: rackNo, column: pair.ganjil, pigeon: isBottomPigeon ? "YES" : "NO" } })
+                                          }}
+                                          onMouseLeave={() => setTooltip(null)}
+                                          style={{
+                                            width: `${boxWidth}px`, height: `${boxHeight}px`,
+                                            borderLeft: "0.5px solid #84cc16", borderRight: "0.5px solid #84cc16", borderTop: "0.5px solid #84cc16", borderBottom: "0.5px solid #84cc16",
+                                            background: bottomColor,
+                                            boxShadow: isBottomSearch ? "0 0 22px rgba(0,255,255,1)" : "none",
+                                            zIndex: isBottomSearch ? 50 : 1,
+                                            animation: isBottomSearch ? "pulseGlow 1s infinite" : "none",
+                                            color: isBottomPigeon ? "#ffffff" : "#111827",
+                                            display: "flex", alignItems: "center", justifyContent: "center", fontSize: "8px", fontWeight: "bold", boxSizing: "border-box"
+                                          }}>
+                                          {bottomExist ? pair.ganjil : ""}
+                                        </div>
+                                      </div>
+                                    </React.Fragment>
+                                  )
+                                }
+
+                                if (!topExist && !bottomExist) {
+                                  return (
+                                    <React.Fragment key={pair.genap}>
+                                      {sectionBreaks.includes(pair.genap) && <div style={{ width: `${sectionGap}px` }} />}
+                                      <div style={{ width: `${boxWidth}px`, height: `${boxHeight}px` }} />
+                                    </React.Fragment>
+                                  )
+                                }
+
+                                const topSingleColor = isTopPigeon ? "#111827" : (allocatedColorMap[topData?.AllocatedFor] || allocatedColorMap.DEFAULT)
+                                const bottomSingleColor = isBottomPigeon ? "#111827" : (allocatedColorMap[bottomData?.AllocatedFor] || allocatedColorMap.DEFAULT)
+
+                                return (
+                                  <React.Fragment key={pair.genap}>
+                                    {sectionBreaks.includes(pair.genap) && <div style={{ width: `${sectionGap}px` }} />}
+                                    <div style={{ display: "flex", flexDirection: "column", width: `${boxWidth}px`, height: `${boxHeight}px`, boxSizing: "border-box", position: "relative" }}>
+                                      {topExist && (
+                                        <div
+                                          id={isTopSearch ? "search-highlight" : undefined}
+                                          onMouseEnter={(e) => {
+                                            setTooltip({ x: e.clientX, y: e.clientY, data: { bin: topData?.StorageBin, allocated: topData?.AllocatedFor, rack: rackNo, column: pair.genap, pigeon: isTopPigeon ? "YES" : "NO" } })
+                                          }}
+                                          onMouseLeave={() => setTooltip(null)}
+                                          style={{
+                                            width: "100%", height: bottomExist ? "50%" : "100%",
+                                            background: topSingleColor,
+                                            borderLeft: "0.5px solid #84cc16", borderRight: "0.5px solid #84cc16", borderTop: "0.5px solid #84cc16",
+                                            borderBottom: bottomExist ? "0.5px solid #84cc16" : "0.5px solid #84cc16",
+                                            boxShadow: isTopSearch ? "0 0 40px rgba(0,255,255,1)" : "none",
+                                            zIndex: isTopSearch ? 9999 : 1,
+                                            animation: isTopSearch ? "pulseGlow 0.6s infinite ease-in-out" : "none",
+                                            color: isTopPigeon ? "#ffffff" : "#111827",
+                                            display: "flex", alignItems: "center", justifyContent: "center", fontSize: bottomExist ? "7px" : "8px", fontWeight: "bold", boxSizing: "border-box"
+                                          }}>
+                                          {pair.genap}
+                                        </div>
+                                      )}
+                                      {bottomExist && (
+                                        <div
+                                          id={isBottomSearch ? "search-highlight" : undefined}
+                                          onMouseEnter={(e) => {
+                                            setTooltip({ x: e.clientX, y: e.clientY, data: { bin: bottomData?.StorageBin, allocated: bottomData?.AllocatedFor, rack: rackNo, column: pair.ganjil, pigeon: isBottomPigeon ? "YES" : "NO" } })
+                                          }}
+                                          onMouseLeave={() => setTooltip(null)}
+                                          style={{
+                                            width: "100%", height: topExist ? "50%" : "100%",
+                                            background: bottomSingleColor,
+                                            borderLeft: "0.5px solid #84cc16", borderRight: "0.5px solid #84cc16", borderBottom: "0.5px solid #84cc16",
+                                            borderTop: topExist ? "none" : "0.5px solid #84cc16",
+                                            boxShadow: isBottomSearch ? "0 0 22px rgba(0,255,255,1)" : "none",
+                                            transform: isBottomSearch ? "scale(1.25)" : "scale(1)",
+                                            zIndex: isBottomSearch ? 50 : 1,
+                                            animation: isBottomSearch ? "pulseGlow 1s infinite" : "none",
+                                            color: isBottomPigeon ? "#ffffff" : "#111827",
+                                            display: "flex", alignItems: "center", justifyContent: "center", fontSize: topExist ? "7px" : "8px", fontWeight: "bold", boxSizing: "border-box"
+                                          }}>
+                                          {pair.ganjil}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </React.Fragment>
+                                )
+                              })}
+                            </div>
+                          </div>
                         )
                       })}
-                    </div>
-                  </div>
-                )
-              })}
-            </div> 
+                    </div> 
+                  </TransformComponent>
+                </>
+              )}
+            </TransformWrapper>
           )}
         </div>
 
