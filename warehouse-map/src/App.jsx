@@ -553,7 +553,7 @@ function App() {
           boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)",
           display: "flex",
           flexDirection: "column",
-          gap: "14px",
+          gap: "8px", /* Jarak dikecilin karena Baris 2 udah hilang */
           boxSizing: "border-box",
           width: "100%"
         }}>
@@ -578,8 +578,12 @@ function App() {
               >
                 &larr; Main Menu
               </button>
+              
+              {/* === UPDATE 1: JUDUL DINAMIS MENGAMBIL ANGKA DARI ROW === */}
               <h1 style={{ fontSize: "22px", fontWeight: "bold", margin: 0, color: "#111827", letterSpacing: "-0.5px" }}>
-                Layout Mezzanine MAP Warehouse Cella
+                {selectedRow !== "ALL" && selectedRow.replace(/\D/g, '') 
+                  ? `Layout Mezzanine MAP Warehouse Cella - Lantai ${selectedRow.replace(/\D/g, '')}` 
+                  : "Layout Mezzanine MAP Warehouse Cella"}
               </h1>
             </div>
             
@@ -588,16 +592,11 @@ function App() {
                 type="text"
                 placeholder="Search Bin/Column (Press Enter)..."
                 value={searchInput}
-                onChange={(e) => {
-                  // Cuma update state teks, nggak trigger nyari
-                  setSearchInput(e.target.value.toUpperCase())
-                }}
+                onChange={(e) => setSearchInput(e.target.value.toUpperCase())}
                 onKeyDown={(e) => {
-                  // EKSEKUSI PENCARIAN & PINDAH RACK SAAT ENTER
                   if (e.key === 'Enter') {
                     setSearchBin(searchInput)
                     if (!searchInput) return
-                    
                     const foundRow = uploadedData.find(x => x.UpperBin.includes(searchInput))?.ROW
                     if (foundRow && foundRow !== selectedRow) {
                       setSelectedRow(foundRow)
@@ -615,69 +614,58 @@ function App() {
             </div>
           </div>
 
-          {/* BARIS 2: STATS & INDICATORS */}
+          {/* === UPDATE 2, 3, 4, & 5: BARIS LEGEND & STATS DIGABUNG === */}
           {selectedRow !== "ALL" && (
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px", borderTop: "1px solid #f3f4f6", paddingTop: "12px" }}>
-              <h2 style={{ fontSize: "18px", fontWeight: "bold", margin: 0, color: "#374151" }}>
-                Layout: <span style={{ color: "#ca8a04" }}>{selectedRow}</span>
-              </h2>
-
-              <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "#f9fafb", padding: "6px 12px", borderRadius: "6px", border: "1px solid #e5e7eb" }}>
-                  <div style={{ width: "12px", height: "12px", background: "cyan", borderRadius: "3px", boxShadow: "0 0 8px cyan" }} />
-                  <span style={{ fontSize: "11px", fontWeight: "bold", color: "#4b5563" }}>Search Result</span>
-                </div>
-
-                <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "#f9fafb", padding: "6px 12px", borderRadius: "6px", border: "1px solid #e5e7eb" }}>
-                  <div style={{ width: "12px", height: "12px", background: "#111827", borderRadius: "3px" }} />
-                  <span style={{ fontSize: "11px", fontWeight: "bold", color: "#4b5563" }}>Pigeon Hole</span>
-                </div>
-
-                <div style={{ display: "flex", alignItems: "center", gap: "14px", background: "#f9fafb", padding: "6px 14px", borderRadius: "6px", border: "1px solid #e5e7eb", fontSize: "11px", fontWeight: "bold", color: "#1f2937" }}>
-                  <span>Rack: <span style={{ color: "#2563eb" }}>{totalRackCount}</span></span>
-                  <span>Bin: <span style={{ color: "#2563eb" }}>{totalBinCount}</span></span>
-                  <span>Pigeon: <span style={{ color: "#2563eb" }}>{totalPigeonCount}</span></span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* BARIS 3: LEGEND COLOR AUTOMATIC */}
-          {selectedRow !== "ALL" && activeAllocated.length > 0 && (
             <div style={{
               display: "flex",
+              justifyContent: "space-between", /* Ini otomatis mendorong KIRI ke kiri, KANAN ke kanan */
+              alignItems: "center",
               flexWrap: "wrap",
               gap: "12px",
               padding: "8px 12px",
               backgroundColor: "#f3f4f6", 
               borderRadius: "6px",
-              alignItems: "center",
-              border: "1px solid #e5e7eb"
+              border: "1px solid #e5e7eb",
+              marginTop: "4px"
             }}>
-              <span style={{ fontSize: "10px", fontWeight: "800", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.5px", marginRight: "4px" }}>
-                Legend Kategori Color ({selectedRow}):
-              </span>
+              
+              {/* KIRI: Legend Kategori Color + Badge Warna + Pigeon Hole Indicator */}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "center" }}>
+                <span style={{ fontSize: "10px", fontWeight: "800", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.5px", marginRight: "4px" }}>
+                  Legend Kategori Color ({selectedRow}):
+                </span>
 
-              {activeAllocated.map((zoneName) => {
-                const colorHex = allocatedColorMap[zoneName]
-                if (!colorHex) return null
+                {/* Looping Warna Alokasi */}
+                {activeAllocated.map((zoneName) => {
+                  const colorHex = allocatedColorMap[zoneName]
+                  if (!colorHex) return null
 
-                return (
-                  <div key={zoneName} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <div style={{
-                      width: "12px",
-                      height: "12px",
-                      backgroundColor: colorHex,
-                      borderRadius: "3px",
-                      border: "1px solid rgba(0,0,0,0.15)",
-                      boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
-                    }} />
-                    <span style={{ fontSize: "11px", fontWeight: "700", color: "#374151" }}>
-                      {zoneName}
-                    </span>
-                  </div>
-                )
-              })}
+                  return (
+                    <div key={zoneName} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <div style={{
+                        width: "12px", height: "12px", backgroundColor: colorHex,
+                        borderRadius: "3px", border: "1px solid rgba(0,0,0,0.15)", boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
+                      }} />
+                      <span style={{ fontSize: "11px", fontWeight: "700", color: "#374151" }}>
+                        {zoneName}
+                      </span>
+                    </div>
+                  )
+                })}
+
+                {/* Indikator Pigeon Hole dipindah ke dalam blok Legend */}
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginLeft: "6px", paddingLeft: "12px", borderLeft: "2px solid #d1d5db" }}>
+                  <div style={{ width: "12px", height: "12px", background: "#111827", borderRadius: "3px" }} />
+                  <span style={{ fontSize: "11px", fontWeight: "bold", color: "#4b5563" }}>Pigeon Hole</span>
+                </div>
+              </div>
+
+              {/* KANAN: Stats Bin & Pigeon (Didorong mentok kanan) */}
+              <div style={{ display: "flex", alignItems: "center", gap: "14px", fontSize: "11px", fontWeight: "bold", color: "#1f2937", background: "#ffffff", padding: "4px 12px", borderRadius: "4px", border: "1px solid #d1d5db" }}>
+                <span>Bin: <span style={{ color: "#2563eb" }}>{totalBinCount}</span></span>
+                <span>Pigeon: <span style={{ color: "#2563eb" }}>{totalPigeonCount}</span></span>
+              </div>
+
             </div>
           )}
 
