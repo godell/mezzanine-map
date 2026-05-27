@@ -466,14 +466,54 @@ function App() {
                     </span>
                   </div>
           
-                  <div style={{ borderTop: "2px solid #f1eae0", margin: "20px 0", paddingTop: "16px" }}>
-                    <div style={{ fontSize: "12px", color: "#9ca3af", marginBottom: "6px", fontWeight: "600", textTransform: "uppercase" }}>
-                      Aisle Configurations
-                    </div>
-                    <div style={{ fontSize: "13px", fontWeight: "700", color: "#443e34", lineHeight: "1.5" }}>
-                      {rowConfigs[mezz]?.map(s => `Sec ${s.section} (${s.start}-${s.end})`).join(" • ")}
-                    </div>
-                  </div>
+                  {/* === UPDATE: ALLOCATED FOR INFO DENGAN BADGE WARNA === */}
+        <div style={{ borderTop: "2px solid #f1eae0", margin: "20px 0", paddingTop: "16px" }}>
+          <div style={{ fontSize: "12px", color: "#9ca3af", marginBottom: "10px", fontWeight: "600", textTransform: "uppercase" }}>
+            Allocated For (Active Zones)
+          </div>
+          
+          {(() => {
+            // 1. Ambil data khusus untuk lantai mezzanine ini (misal: cuma M1)
+            const dataInMezz = uploadedData.filter(x => x.ROW === mezz);
+            
+            // 2. Ekstrak nama AllocatedFor yang unik, buang yang kosong
+            const uniqueAllocatedInMezz = [...new Set(dataInMezz.map(x => x.AllocatedFor || "EMPTY"))]
+              .filter(name => name !== "EMPTY" && name !== "DEFAULT");
+
+            // 3. Jika database belum konek atau lantainya kosong
+            if (uniqueAllocatedInMezz.length === 0) {
+              return (
+                <div style={{ fontSize: "13px", fontWeight: "700", color: "#d1d5db", fontStyle: "italic" }}>
+                  {dbStatus === "CONNECTED" ? "No active allocation / Empty" : "Waiting for database..."}
+                </div>
+              );
+            }
+
+            // 4. Render badge warna-warni
+            return (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                {uniqueAllocatedInMezz.map(client => {
+                  // Ambil warna dari map yang udah lu buat di atas
+                  const bgColor = allocatedColorMap[client] || "#e5e7eb";
+                  return (
+                    <span key={client} style={{ 
+                      background: bgColor, 
+                      color: "#1f1c18", 
+                      fontSize: "10px", 
+                      fontWeight: "800", 
+                      padding: "4px 8px", 
+                      borderRadius: "6px", 
+                      border: "1px solid rgba(0,0,0,0.1)",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.05)"
+                    }}>
+                      {client}
+                    </span>
+                  )
+                })}
+              </div>
+            );
+          })()}
+        </div>
           
                   <div style={{ fontSize: "13px", fontWeight: "800", color: "#b45309", display: "flex", alignItems: "center", gap: "6px", marginTop: "12px" }}>
                     Open Map View <span style={{ fontSize: "16px" }}>&rarr;</span>
