@@ -169,6 +169,7 @@ function App() {
   const [searchInput, setSearchInput] = useState("") // Tambahan state buat nampung ketikan
   const [tooltip, setTooltip] = useState(null)
   const [dbStatus, setDbStatus] = useState("LOADING") 
+  const [lastUpdate, setLastUpdate] = useState("")
 
   const transformRef = useRef(null) // Tambahan ref buat auto-zoom
 
@@ -188,6 +189,20 @@ function App() {
     fetch("./database.xlsx")
       .then((res) => {
         if (!res.ok) throw new Error("File .xlsx tidak ditemukan, coba .csv");
+        
+        // --- TAMBAHAN TARIK TANGGAL UPDATE ---
+        const lastMod = res.headers.get("Last-Modified");
+        if (lastMod) {
+          const dateObj = new Date(lastMod);
+          const formattedDate = dateObj.toLocaleDateString('id-ID', {
+            day: '2-digit', month: 'short', year: 'numeric'
+          }) + ' - ' + dateObj.toLocaleTimeString('id-ID', {
+            hour: '2-digit', minute: '2-digit'
+          }) + ' WIB';
+          setLastUpdate(formattedDate);
+        }
+        // -------------------------------------
+
         return res.arrayBuffer();
       })
       .then((ab) => {
@@ -382,16 +397,43 @@ function App() {
           animation: "fadeInUp 0.8s ease-out forwards" 
         }}>
           
-          {/* Badge Database Status */}
-          <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "#ffffff", padding: "8px 16px", borderRadius: "30px", border: "1px solid #e2d9c8", boxShadow: "0 4px 6px rgba(0,0,0,0.02)", marginBottom: "28px" }}>
+          {/* === UPDATE: BADGE DATABASE & LAST UPDATE JADI SATU KESATUAN === */}
+          <div style={{ 
+            display: "flex", 
+            flexDirection: "column", 
+            alignItems: "center", 
+            gap: "6px",          /* Mengatur jarak rapat antara Badge dan Last Update */
+            marginBottom: "28px" /* Jarak aman ke elemen di bawahnya */
+          }}>
+            
+            {/* Box Badge Utama */}
             <div style={{ 
-              width: "10px", height: "10px", borderRadius: "50%", 
-              backgroundColor: dbStatus === "CONNECTED" ? "#10b981" : dbStatus === "LOADING" ? "#f59e0b" : "#ef4444",
-              boxShadow: dbStatus === "CONNECTED" ? "0 0 8px #10b981" : "none"
-            }} />
-            <span style={{ fontSize: "12px", fontWeight: "700", color: "#5c5549", letterSpacing: "0.5px" }}>
-              {dbStatus === "CONNECTED" ? "MASTER DATABASE: SECURE & CONNECTED" : dbStatus === "LOADING" ? "CONNECTING TO MASTER STORAGE..." : "DATABASE FILE NOT FOUND (CHECK FOLDER)"}
-            </span>
+              display: "inline-flex", 
+              alignItems: "center", 
+              gap: "8px", 
+              background: "#ffffff", 
+              padding: "8px 16px", 
+              borderRadius: "30px", 
+              border: "1px solid #e2d9c8", 
+              boxShadow: "0 4px 6px rgba(0,0,0,0.02)" 
+            }}>
+              <div style={{ 
+                width: "10px", height: "10px", borderRadius: "50%", 
+                backgroundColor: dbStatus === "CONNECTED" ? "#10b981" : dbStatus === "LOADING" ? "#f59e0b" : "#ef4444",
+                boxShadow: dbStatus === "CONNECTED" ? "0 0 8px #10b981" : "none"
+              }} />
+              <span style={{ fontSize: "12px", fontWeight: "700", color: "#5c5549", letterSpacing: "0.5px" }}>
+                {dbStatus === "CONNECTED" ? "MASTER DATABASE: SECURE & CONNECTED" : dbStatus === "LOADING" ? "CONNECTING TO MASTER STORAGE..." : "DATABASE FILE NOT FOUND (CHECK FOLDER)"}
+              </span>
+            </div>
+
+            {/* Teks Info Last Update (Langsung nempel tepat di bawah box) */}
+            {lastUpdate && (
+              <span style={{ fontSize: "11px", fontWeight: "700", color: "#8c8273" }}>
+                Last Update: {lastUpdate}
+              </span>
+            )}
+
           </div>
 
           {/* Judul Utama */}
@@ -579,12 +621,22 @@ function App() {
                 &larr; Main Menu
               </button>
               
-              {/* === UPDATE 1: JUDUL DINAMIS MENGAMBIL ANGKA DARI ROW === */}
-              <h1 style={{ fontSize: "22px", fontWeight: "bold", margin: 0, color: "#111827", letterSpacing: "-0.5px" }}>
-                {selectedRow !== "ALL" && selectedRow.replace(/\D/g, '') 
-                  ? `Layout Mezzanine MAP Warehouse Cella - Lantai ${selectedRow.replace(/\D/g, '')}` 
-                  : "Layout Mezzanine MAP Warehouse Cella"}
-              </h1>
+              {/* === UPDATE 1: JUDUL DINAMIS & INFO LAST UPDATE (PASTIKAN RATA KIRI) === */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", textAlign: "left" }}>
+          
+          <h1 style={{ fontSize: "22px", fontWeight: "bold", margin: 0, color: "#111827", letterSpacing: "-0.5px" }}>
+            {selectedRow !== "ALL" && selectedRow.replace(/\D/g, '') 
+              ? `Layout Mezzanine MAP Warehouse Cella - Lantai ${selectedRow.replace(/\D/g, '')}` 
+              : "Layout Mezzanine MAP Warehouse Cella"}
+          </h1>
+          
+          {lastUpdate && (
+            <span style={{ fontSize: "11px", fontWeight: "600", color: "#6b7280", marginTop: "0px" }}>
+              Last Database Update: {lastUpdate}
+            </span>
+          )}
+          
+        </div>
             </div>
             
             <div style={{ display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap" }}>
